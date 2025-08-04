@@ -15,6 +15,15 @@ pub fn vector2d(x: Float, y: Float) -> Vector {
   Vector([x, y])
 }
 
+/// Creates a 3D vector from three floats
+pub fn vector3d(x: Float, y: Float, z: Float) -> Vector {
+  Vector([x, y, z])
+}
+
+pub fn vector4d(x: Float, y: Float, z: Float, w: Float) -> Vector {
+  Vector([x, y, z, w])
+}
+
 /// Creates a unit basis vector with the specified dimension and index
 /// The component at the given index will be 1.0, all others will be 0.0
 ///
@@ -46,17 +55,6 @@ pub fn to_string(vec: Vector) -> String {
   "[" <> component_strings <> "]"
 }
 
-/// Computes the Euclidean length (norm) of the vector in any dimension
-pub fn length(vec: Vector) -> Float {
-  let Vector(components) = vec
-
-  components
-  |> list.map(fn(x) { x *. x })
-  |> list.fold(Ok(0.0), fn(acc, x) { result.map(acc, fn(sum) { sum +. x }) })
-  |> result.try(float.square_root)
-  |> result.unwrap(0.0)
-}
-
 /// Checks if two vectors are equal by comparing their corresponding elements
 pub fn equal_to(vec1: Vector, vec2: Vector) -> Bool {
   let Vector(components1) = vec1
@@ -73,6 +71,75 @@ pub fn becomes(x: Vector, y: Vector) -> Vector {
   let Vector(y_components) = y
 
   Vector(y_components)
+}
+
+/// Adds two vectors by adding their corresponding components
+/// Both vectors must have the same dimension
+pub fn vector_addition(vec1: Vector, vec2: Vector) -> Vector {
+  let Vector(components1) = vec1
+  let Vector(components2) = vec2
+
+  let added_components =
+    list.zip(components1, components2)
+    |> list.map(fn(pair) {
+      let #(x, y) = pair
+      x +. y
+    })
+
+  Vector(added_components)
+}
+
+pub fn vector_subtraction(vec1: Vector, vec2: Vector) -> Vector {
+  let Vector(components1) = vec1
+  let Vector(components2) = vec2
+
+  let added_components =
+    list.zip(components1, components2)
+    |> list.map(fn(pair) {
+      let #(x, y) = pair
+      x -. y
+    })
+
+  Vector(added_components)
+}
+
+pub fn vector_scaling(vec: Vector, scalar: Float) -> Vector {
+  let Vector(components) = vec
+
+  let scaled_components =
+    components
+    |> list.map(fn(x) { x *. scalar })
+
+  Vector(scaled_components)
+}
+
+pub fn axpy(a: Float, x: Vector, y: Vector) -> Vector {
+  vector_scaling(x, a)
+  |> vector_addition(y)
+}
+
+pub fn linear_combination(a: Float, x: Vector, b: Float, y: Vector) -> Vector {
+  let scaled_x = vector_scaling(x, a)
+  let scaled_y = vector_scaling(y, b)
+  vector_addition(scaled_x, scaled_y)
+}
+
+pub fn dot_product(vec1: Vector, vec2: Vector) -> Float {
+  let Vector(components1) = vec1
+  let Vector(components2) = vec2
+
+  list.zip(components1, components2)
+  |> list.map(fn(pair) {
+    let #(x, y) = pair
+    x *. y
+  })
+  |> list.fold(0.0, fn(x, acc) { acc +. x })
+}
+
+pub fn length(vec: Vector) -> Float {
+  Ok(dot_product(vec, vec))
+  |> result.try(float.square_root)
+  |> result.unwrap(0.0)
 }
 
 pub fn main() {
@@ -103,4 +170,54 @@ pub fn main() {
   // d becomes the same as a
   io.println("Vector c: " <> to_string(c))
   io.println("Vector d after c becomes a: " <> to_string(d))
+
+  // Test add function
+  let x = vector2d(3.0, 4.0)
+  let y = vector2d(1.0, 2.0)
+  let z = vector_addition(x, y)
+  io.println("Vector 1: " <> to_string(x))
+  io.println("Vector 2: " <> to_string(y))
+  io.println("Sum: " <> to_string(z))
+
+  // Test vector scaling
+  let scaled = vector_scaling(x, -0.5)
+  io.println("Scaled vector: " <> to_string(scaled))
+
+  // Test subtract function
+  let x = vector2d(3.0, 4.0)
+  let y = vector2d(1.0, 2.0)
+  let z = vector_subtraction(x, y)
+  io.println("Vector 1: " <> to_string(x))
+  io.println("Vector 2: " <> to_string(y))
+  io.println("Difference: " <> to_string(z))
+
+  // test axpy function
+  let a = 2.0
+  let x = vector2d(1.0, 2.0)
+  let y = vector2d(3.0, 4.0)
+  let result = axpy(a, x, y)
+  io.println("AXPY result: " <> to_string(result))
+
+  // test linear combination function
+  let a = 1.0
+  let x = vector2d(1.0, 2.0)
+  let b = 2.0
+  let y = vector2d(3.0, 4.0)
+  let linear_result = linear_combination(a, x, b, y)
+  io.println("Linear combination result: " <> to_string(linear_result))
+
+  // test dot product function
+  let dot_result = dot_product(x, y)
+  io.println(
+    "Dot product of "
+    <> to_string(x)
+    <> " and "
+    <> to_string(y)
+    <> ": "
+    <> float.to_string(dot_result),
+  )
+
+  let vector = vector4d(0.5, 0.5, 0.5, 0.5)
+  io.println("Vector 4D: " <> to_string(vector))
+  io.println("Length of 4D vector: " <> float.to_string(length(vector)))
 }
